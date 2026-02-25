@@ -1,0 +1,40 @@
+# Micro News App - Error-Free Configuration
+
+# PHP Error Handling
+php_flag display_errors Off
+php_value error_reporting 0
+
+# Security Headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# JSON Content-Type
+<IfModule mod_mime.c>
+    AddType application/json .json
+</IfModule>
+
+# Caching
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 year"
+    ExpiresByType application/javascript "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 year"
+</IfModule>
+
+# Protect Files
+<FilesMatch "\.(json)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</FilesMatch>
+
+# Allow Uploads
+<Directory "/uploads">
+    <IfModule mod_authz_core.c>
+        Require all granted
+    </IfModule>
+</Directory>
