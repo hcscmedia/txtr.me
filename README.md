@@ -21,6 +21,7 @@ Dateibasierte PHP-Micro-Social-App mit Feed, Profilen, Follow-System, Direktnach
 - [Deployment-Hinweise](#deployment-hinweise)
 - [Troubleshooting](#troubleshooting)
 - [Release-Checkliste](#release-checkliste)
+- [Contributing](#contributing)
 - [Weiterentwicklung](#weiterentwicklung)
 
 ## Überblick
@@ -240,6 +241,12 @@ ADMIN_PASSWORD='...' php -S 127.0.0.1:8080
 Für wiederholbare Patch-Releases (z. B. `v1.0.1`) siehe:
 
 - `docs/release-checklist.md`
+
+## Contributing
+
+Beitragsrichtlinien und Entwicklungsworkflow:
+
+- `CONTRIBUTING.md`
 
 ## Weiterentwicklung
 
