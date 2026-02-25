@@ -225,6 +225,10 @@ Spezifische Anleitung für Spaceship:
 
 - `docs/spaceship-deploy.md`
 
+Lokale Installation mit XAMPP:
+
+- `docs/xampp-localhost.md`
+
 ## Troubleshooting
 
 ### `Admin-Passwort ist nicht konfiguriert`
