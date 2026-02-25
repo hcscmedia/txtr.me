@@ -20,7 +20,11 @@ define('FOLLOWS_FILE', 'follows.json');
 define('MESSAGES_FILE', 'messages.json');
 define('ACTIVITY_LOG_FILE', 'activity_log.json');
 define('MAX_POSTS', 50);
-define('ADMIN_PASSWORD', getenv('ADMIN_PASSWORD') ?: '');
+$adminPassword = getenv('ADMIN_PASSWORD');
+if ($adminPassword === false || $adminPassword === '') {
+    $adminPassword = $_ENV['ADMIN_PASSWORD'] ?? ($_SERVER['ADMIN_PASSWORD'] ?? '');
+}
+define('ADMIN_PASSWORD', (string)$adminPassword);
 define('UPLOAD_DIR', 'uploads/');
 define('MAX_FILE_SIZE', 5 * 1024 * 1024);
 define('RATE_LIMIT_FILE', 'rate_limits.json');

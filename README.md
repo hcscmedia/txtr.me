@@ -215,6 +215,10 @@ Typische Dateien:
 - Regelmäßige Backups der JSON-Daten durchführen
 - Optional: Reverse Proxy mit zusätzlichem Rate-Limiting einsetzen
 
+Spezifische Anleitung für Spaceship:
+
+- `docs/spaceship-deploy.md`
+
 ## Troubleshooting
 
 ### `Admin-Passwort ist nicht konfiguriert`
