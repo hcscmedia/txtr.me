@@ -1,5 +1,7 @@
 # txtr.me
 
+![txtr.me Screenshot](docs/screenshot1.png)
+
 [![CI](https://github.com/hcscmedia/txtr.me/actions/workflows/ci.yml/badge.svg)](https://github.com/hcscmedia/txtr.me/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/hcscmedia/txtr.me?label=Release)](https://github.com/hcscmedia/txtr.me/releases)
 ![PHP](https://img.shields.io/badge/PHP-8%2B-777BB4?logo=php&logoColor=white)
