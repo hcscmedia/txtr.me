@@ -13,11 +13,7 @@ Dateibasierte PHP-Micro-Social-App mit Feed, Profilen, Follow-System, Direktnach
 
 ## Menü
 
-- [Überblick](#überblick) - [Screenshot](#screenshot) - [Features](#features) - [Technischer Stack](#technischer-stack)
-- [Projektstruktur](#projektstruktur) - [Schnellstart](#schnellstart) - [Qualitätssicherung](#qualitätssicherung)
-- [Monitoring](#monitoring) - [Konfiguration](#konfiguration) - [Sicherheit](#sicherheit) - [API-Übersicht](#api-übersicht)
-- [Datenmodell (JSON-Dateien)](#datenmodell-json-dateien) - [Deployment-Hinweise](#deployment-hinweise) - [Troubleshooting](#troubleshooting)
-- [Release-Checkliste](#release-checkliste) - [Contributing](#contributing) - [Weiterentwicklung](#weiterentwicklung)
+- [Überblick](#überblick) - [Screenshot](#screenshot) - [Features](#features) - [Technischer Stack](#technischer-stack)- [Projektstruktur](#projektstruktur) - [Schnellstart](#schnellstart) - [Qualitätssicherung](#qualitätssicherung)- [Monitoring](#monitoring) - [Konfiguration](#konfiguration) - [Sicherheit](#sicherheit) - [API-Übersicht](#api-übersicht)- [Datenmodell (JSON-Dateien)](#datenmodell-json-dateien) - [Deployment-Hinweise](#deployment-hinweise) - [Troubleshooting](#troubleshooting)- [Release-Checkliste](#release-checkliste) - [Contributing](#contributing) - [Weiterentwicklung](#weiterentwicklung)
 
 ## Überblick
 
