@@ -65,7 +65,7 @@ $unreadCount = !empty($currentUserId) ? getUnreadCount($currentUserId) : 0;
     </div>
     
     <div class="search-container">
-        <input type="text" class="search-input" id="searchInput" placeholder="News durchsuchen..." oninput="handleSearch()">
+        <input type="text" class="search-input" id="searchInput" placeholder="Suche: Text, @Nutzer oder #Hashtag" oninput="handleSearch()">
         <i class="fas fa-search search-icon"></i>
         <button class="search-clear" id="searchClear" onclick="clearSearch()">
             <i class="fas fa-times"></i>

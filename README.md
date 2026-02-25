@@ -42,7 +42,7 @@ Alle Inhalte werden in JSON-Dateien gespeichert. Dadurch ist die App einfach auf
 ### Benutzer & Feed
 - Post erstellen (Text, Link, Bild, Farbe)
 - Likes, Kommentare, Bookmarks, Meldungen
-- Hashtag-Extraktion und Suche
+- Suche über Text, @Nutzer und #Hashtags
 - „Following“-Feed
 
 ### Profile & Social

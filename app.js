@@ -125,8 +125,26 @@ function matchesFilter(post) {
     if (!currentFilter || currentFilter === 'all') return true;
     
     if (currentFilter === 'search') {
-        const searchText = (post.text + ' ' + (post.hashtags || []).join(' ')).toLowerCase();
-        return searchText.includes(filterValue);
+        const rawQuery = (filterValue || '').trim();
+        const query = rawQuery.replace(/^[@#]/, '');
+        if (!query) return true;
+
+        const username = (post.username || '').toLowerCase();
+        const text = (post.text || '').toLowerCase();
+        const hashtags = (post.hashtags || []).map(tag => String(tag).toLowerCase());
+        const hashtagsAsText = hashtags.join(' ');
+        const linkUrl = (post.link || '').toLowerCase();
+
+        if (rawQuery.startsWith('@')) {
+            return username.includes(query);
+        }
+
+        if (rawQuery.startsWith('#')) {
+            return hashtags.some(tag => tag.includes(query));
+        }
+
+        const searchText = [username, text, hashtagsAsText, linkUrl].join(' ');
+        return searchText.includes(query);
     }
     
     if (currentFilter === 'hashtag') {
