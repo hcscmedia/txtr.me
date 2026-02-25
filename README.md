@@ -1,10 +1,14 @@
 # txtr.me
 
 [![CI](https://github.com/hcscmedia/txtr.me/actions/workflows/ci.yml/badge.svg)](https://github.com/hcscmedia/txtr.me/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/hcscmedia/txtr.me?label=Release)](https://github.com/hcscmedia/txtr.me/releases)
+![PHP](https://img.shields.io/badge/PHP-8%2B-777BB4?logo=php&logoColor=white)
+![Storage](https://img.shields.io/badge/Storage-JSON-0ea5e9)
+![Frontend](https://img.shields.io/badge/Frontend-Vanilla%20JS-f7df1e?logo=javascript&logoColor=111)
 
 Dateibasierte PHP-Micro-Social-App mit Feed, Profilen, Follow-System, Direktnachrichten und Admin-Dashboard.
 
-## Inhaltsverzeichnis
+## Menü
 
 - [Überblick](#überblick)
 - [Screenshot](#screenshot)
