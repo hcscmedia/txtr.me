@@ -28,6 +28,7 @@ define('ADMIN_PASSWORD', (string)$adminPassword);
 define('UPLOAD_DIR', 'uploads/');
 define('MAX_FILE_SIZE', 5 * 1024 * 1024);
 define('RATE_LIMIT_FILE', 'rate_limits.json');
+define('NOTIFICATIONS_FILE', 'notifications.json');
 
 // Upload-Ordner erstellen
 if (!file_exists(UPLOAD_DIR)) {
@@ -107,6 +108,95 @@ function checkRateLimit($action, $limit, $windowSeconds, $identifier = 'global')
     $data[$key]['hits'] = $hits;
     saveRateLimitData($data);
     return true;
+}
+
+// ==================== NOTIFICATIONS ====================
+
+function getNotifications() {
+    if (!file_exists(NOTIFICATIONS_FILE)) return [];
+    $json = @file_get_contents(NOTIFICATIONS_FILE);
+    if (empty($json)) return [];
+    $data = @json_decode($json, true);
+    return is_array($data) ? $data : [];
+}
+
+function saveNotifications($notifications) {
+    return writeJsonFile(NOTIFICATIONS_FILE, $notifications);
+}
+
+function addNotification($userId, $type, $actorId = null, $actorName = null, $meta = []) {
+    if (empty($userId) || empty($type)) return false;
+
+    $notifications = getNotifications();
+    $notifications[] = [
+        'id' => 'notif_' . time() . '_' . bin2hex(random_bytes(4)),
+        'user_id' => $userId,
+        'type' => $type,
+        'actor_id' => $actorId,
+        'actor_name' => $actorName,
+        'meta' => is_array($meta) ? $meta : [],
+        'read' => false,
+        'created_at' => time()
+    ];
+
+    if (count($notifications) > 5000) {
+        $notifications = array_slice($notifications, -5000);
+    }
+
+    return saveNotifications($notifications);
+}
+
+function getUserNotifications($userId, $limit = 30) {
+    if (empty($userId)) return [];
+    $notifications = getNotifications();
+
+    $list = array_values(array_filter($notifications, fn($n) =>
+        isset($n['user_id']) && $n['user_id'] === $userId
+    ));
+
+    usort($list, fn($a, $b) => ($b['created_at'] ?? 0) - ($a['created_at'] ?? 0));
+    return array_slice($list, 0, max(1, (int)$limit));
+}
+
+function getUnreadNotificationsCount($userId) {
+    if (empty($userId)) return 0;
+    $notifications = getNotifications();
+    $count = 0;
+
+    foreach ($notifications as $n) {
+        if (($n['user_id'] ?? '') === $userId && empty($n['read'])) {
+            $count++;
+        }
+    }
+
+    return $count;
+}
+
+function markNotificationsAsRead($userId) {
+    if (empty($userId)) return false;
+    $notifications = getNotifications();
+    $changed = false;
+
+    foreach ($notifications as &$n) {
+        if (($n['user_id'] ?? '') === $userId && empty($n['read'])) {
+            $n['read'] = true;
+            $changed = true;
+        }
+    }
+
+    if (!$changed) return true;
+    return saveNotifications($notifications);
+}
+
+function deleteUserNotifications($userId) {
+    if (empty($userId)) return false;
+    $notifications = getNotifications();
+
+    $notifications = array_values(array_filter($notifications, fn($n) =>
+        ($n['user_id'] ?? '') !== $userId && ($n['actor_id'] ?? '') !== $userId
+    ));
+
+    return saveNotifications($notifications);
 }
 
 // ==================== USER MANAGEMENT ====================

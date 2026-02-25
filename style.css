@@ -84,7 +84,7 @@ h1 {
     font-weight: 600;
 }
 
-.theme-toggle, .login-btn, .logout-btn, .dashboard-btn {
+.theme-toggle, .login-btn, .logout-btn, .dashboard-btn, .notification-btn {
     background: none;
     border: none;
     font-size: 20px;
@@ -95,8 +95,33 @@ h1 {
     transition: background 0.2s;
 }
 
-.theme-toggle:hover, .login-btn:hover, .logout-btn:hover, .dashboard-btn:hover {
+.theme-toggle:hover, .login-btn:hover, .logout-btn:hover, .dashboard-btn:hover, .notification-btn:hover {
     background: var(--input-bg);
+}
+
+.notification-btn {
+    position: relative;
+}
+
+.notification-badge {
+    display: none;
+    position: absolute;
+    top: 1px;
+    right: 1px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 10px;
+    background: var(--danger);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 16px;
+    text-align: center;
+}
+
+.notification-badge.show {
+    display: inline-block;
 }
 
 /* ==================== SUCHE ==================== */
@@ -335,6 +360,60 @@ h1 {
 .modal-content button.secondary {
     background: var(--accent);
     color: var(--text-main);
+}
+
+.notifications-modal-content {
+    max-height: 80vh;
+    overflow: hidden;
+}
+
+.notifications-list {
+    max-height: 45vh;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+
+.notification-item {
+    display: block;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    text-decoration: none;
+    color: var(--text-main);
+    background: transparent;
+}
+
+.notification-item:last-child {
+    border-bottom: 0;
+}
+
+.notification-item.unread {
+    background: var(--input-bg);
+}
+
+.notification-text {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.notification-meta {
+    margin-top: 3px;
+    font-size: 12px;
+    color: var(--text-sec);
+}
+
+.notification-time {
+    margin-top: 5px;
+    font-size: 11px;
+    color: var(--text-sec);
+}
+
+.notification-empty {
+    padding: 14px;
+    text-align: center;
+    color: var(--text-sec);
+    font-size: 14px;
 }
 
 .modal-close {

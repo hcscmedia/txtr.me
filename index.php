@@ -49,6 +49,10 @@ $unreadCount = !empty($currentUserId) ? getUnreadCount($currentUserId) : 0;
             <?php endif; ?>
         </div>
         <div class="header-right">
+            <button class="notification-btn" onclick="openNotificationsModal()" title="Benachrichtigungen">
+                <i class="fas fa-bell"></i>
+                <span class="notification-badge" id="notificationBadge"></span>
+            </button>
             <button class="theme-toggle" onclick="toggleTheme()">
                 <i class="fas fa-moon"></i>
             </button>
@@ -224,6 +228,17 @@ $unreadCount = !empty($currentUserId) ? getUnreadCount($currentUserId) : 0;
         <label><input type="checkbox" id="editPostPinned"> Anheften</label>
         <button onclick="updatePost()">Speichern</button>
         <button class="secondary" onclick="closeEditModal()">Abbrechen</button>
+    </div>
+</div>
+
+<div class="modal" id="notificationsModal">
+    <div class="modal-content notifications-modal-content">
+        <h2>Benachrichtigungen</h2>
+        <div class="notifications-list" id="notificationsList">
+            <div class="notification-empty">Keine Benachrichtigungen</div>
+        </div>
+        <button onclick="markNotificationsRead()">Alle als gelesen markieren</button>
+        <button class="secondary" onclick="closeNotificationsModal()">Schließen</button>
     </div>
 </div>
 

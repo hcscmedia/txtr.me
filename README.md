@@ -44,6 +44,7 @@ Alle Inhalte werden in JSON-Dateien gespeichert. Dadurch ist die App einfach auf
 - Likes, Kommentare, Bookmarks, Meldungen
 - Suche über Text, @Nutzer und #Hashtags
 - „Following“-Feed
+- In-App-Benachrichtigungen (Like, Kommentar, Follow, DM)
 
 ### Profile & Social
 - Profilseite mit Bio und Kennzahlen
@@ -206,6 +207,7 @@ Typische Dateien:
 - `news_data.json` – Posts inkl. Kommentare/Likes/Reports
 - `users.json` – Userprofile
 - `messages.json` – Direktnachrichten
+- `notifications.json` – In-App-Benachrichtigungen
 - `activity_log.json` – Admin-/System-Events
 - `follows.json` – Follow-Beziehungen
 - `rate_limits.json` – Rate-Limit-Zustände

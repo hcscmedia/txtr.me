@@ -204,6 +204,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             jsonResponse(['success' => true, 'count' => $count]);
             break;
 
+        case 'get_notifications':
+            $limit = (int)($_GET['limit'] ?? 30);
+            if ($limit < 1) $limit = 30;
+            if ($limit > 100) $limit = 100;
+
+            $notifications = getUserNotifications($currentUser['id'], $limit);
+            $unread = getUnreadNotificationsCount($currentUser['id']);
+
+            jsonResponse([
+                'success' => true,
+                'notifications' => $notifications,
+                'unread_count' => $unread
+            ]);
+            break;
+
         case 'get_followers':
             $targetUserId = $_GET['user_id'] ?? ($currentUser['id'] ?? '');
             if (empty($targetUserId)) {
@@ -382,6 +397,17 @@ switch ($action) {
         if (!followUser($currentUser['id'], $targetUserId)) {
             jsonResponse(['success' => false, 'message' => 'Fehler beim Folgen'], 500);
         }
+
+        if ($targetUserId !== ($currentUser['id'] ?? '')) {
+            addNotification(
+                $targetUserId,
+                'follow',
+                $currentUser['id'] ?? null,
+                $currentUser['display_name'] ?? getUsername(),
+                ['follower_username' => $currentUser['username'] ?? '']
+            );
+        }
+
         jsonResponse(['success' => true]);
         break;
 
@@ -499,6 +525,21 @@ switch ($action) {
         foreach ($posts as &$post) {
             if ($post['id'] === $postId) {
                 $post['likes'] = (int)($post['likes'] ?? 0) + 1;
+
+                $postAuthorId = $post['author_id'] ?? '';
+                if (!empty($postAuthorId) && $postAuthorId !== ($currentUser['id'] ?? '')) {
+                    addNotification(
+                        $postAuthorId,
+                        'like',
+                        $currentUser['id'] ?? null,
+                        $currentUser['display_name'] ?? getUsername(),
+                        [
+                            'post_id' => $post['id'],
+                            'post_preview' => mb_substr(strip_tags($post['text'] ?? ''), 0, 80)
+                        ]
+                    );
+                }
+
                 savePosts($posts);
                 jsonResponse(['success' => true, 'likes' => $post['likes']]);
             }
@@ -530,6 +571,21 @@ switch ($action) {
                     'author_id' => $currentUser['id']
                 ];
                 $post['comments'][] = $newComment;
+
+                $postAuthorId = $post['author_id'] ?? '';
+                if (!empty($postAuthorId) && $postAuthorId !== ($currentUser['id'] ?? '')) {
+                    addNotification(
+                        $postAuthorId,
+                        'comment',
+                        $currentUser['id'] ?? null,
+                        $currentUser['display_name'] ?? getUsername(),
+                        [
+                            'post_id' => $post['id'],
+                            'comment_preview' => mb_substr(strip_tags($commentText), 0, 80)
+                        ]
+                    );
+                }
+
                 savePosts($posts);
                 jsonResponse(['success' => true, 'comments' => $post['comments']]);
             }
@@ -683,10 +739,26 @@ switch ($action) {
         
         $message = sendMessage($currentUser['id'], $toId, $text);
         if ($message) {
+            if ($toId !== ($currentUser['id'] ?? '')) {
+                addNotification(
+                    $toId,
+                    'message',
+                    $currentUser['id'] ?? null,
+                    $currentUser['display_name'] ?? getUsername(),
+                    ['message_preview' => mb_substr(strip_tags($text), 0, 80)]
+                );
+            }
             jsonResponse(['success' => true, 'message' => $message]);
         } else {
             jsonResponse(['success' => false, 'message' => 'Fehler'], 500);
         }
+        break;
+
+    case 'mark_notifications_read':
+        if (markNotificationsAsRead($currentUser['id'])) {
+            jsonResponse(['success' => true]);
+        }
+        jsonResponse(['success' => false, 'message' => 'Fehler beim Aktualisieren'], 500);
         break;
 
     case 'delete_user':
@@ -722,6 +794,8 @@ switch ($action) {
             ($m['from_id'] ?? '') !== $userId && ($m['to_id'] ?? '') !== $userId
         ));
         saveMessages($messages);
+
+        deleteUserNotifications($userId);
 
         $deletedPosts = deleteUserPosts($userId);
 

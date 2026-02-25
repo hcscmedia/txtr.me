@@ -15,6 +15,9 @@ let selectedImageBase64 = '';
 let currentLinkPreview = null;
 let autoSaveTimer = null;
 let linkPreviewTimer = null;
+let notifications = [];
+let unreadNotifications = 0;
+let notificationsPollTimer = null;
 
 // ==================== THEME ====================
 const themeToggle = document.querySelector('.theme-toggle i');
@@ -243,6 +246,138 @@ function getApiErrorMessage(data, fallback = 'Fehler') {
         return '🔒 ' + msg;
     }
     return '❌ ' + msg;
+}
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function notificationText(notification) {
+    const actor = notification?.actor_name || 'Jemand';
+    const meta = notification?.meta || {};
+
+    switch (notification?.type) {
+        case 'follow':
+            return `${actor} folgt dir jetzt`;
+        case 'like':
+            return `${actor} hat deinen Post geliked`;
+        case 'comment':
+            return `${actor} hat deinen Post kommentiert`;
+        case 'message':
+            return `${actor} hat dir eine Nachricht gesendet`;
+        default:
+            return `${actor} hat eine neue Aktivität ausgelöst`;
+    }
+}
+
+function notificationMetaText(notification) {
+    const meta = notification?.meta || {};
+    if (notification?.type === 'comment' && meta.comment_preview) {
+        return `„${meta.comment_preview}“`;
+    }
+    if (notification?.type === 'message' && meta.message_preview) {
+        return `„${meta.message_preview}“`;
+    }
+    if (notification?.type === 'like' && meta.post_preview) {
+        return `Post: „${meta.post_preview}“`;
+    }
+    return '';
+}
+
+function updateNotificationBadge() {
+    const badge = document.getElementById('notificationBadge');
+    if (!badge) return;
+
+    if (unreadNotifications > 0) {
+        badge.textContent = unreadNotifications > 99 ? '99+' : String(unreadNotifications);
+        badge.classList.add('show');
+    } else {
+        badge.textContent = '';
+        badge.classList.remove('show');
+    }
+}
+
+function renderNotifications() {
+    const list = document.getElementById('notificationsList');
+    if (!list) return;
+
+    if (!notifications.length) {
+        list.innerHTML = '<div class="notification-empty">Keine Benachrichtigungen</div>';
+        return;
+    }
+
+    list.innerHTML = notifications.map(n => {
+        const text = escapeHtml(notificationText(n));
+        const meta = escapeHtml(notificationMetaText(n));
+        const createdAt = Number(n.created_at || 0);
+        const timeLabel = createdAt > 0 ? timeAgo(createdAt) : '';
+        const unreadClass = n.read ? '' : ' unread';
+        const targetUrl = n.type === 'message' ? 'messages.php' : 'index.php';
+
+        return `
+            <a href="${targetUrl}" class="notification-item${unreadClass}">
+                <div class="notification-text">${text}</div>
+                ${meta ? `<div class="notification-meta">${meta}</div>` : ''}
+                <div class="notification-time">${escapeHtml(timeLabel)}</div>
+            </a>
+        `;
+    }).join('');
+}
+
+async function loadNotifications(showError = false) {
+    try {
+        const res = await fetch('api.php?action=get_notifications&limit=30');
+        const data = await res.json();
+
+        if (data.success) {
+            notifications = data.notifications || [];
+            unreadNotifications = data.unread_count || 0;
+            updateNotificationBadge();
+            renderNotifications();
+        } else if (showError) {
+            showToast(getApiErrorMessage(data));
+        }
+    } catch (e) {
+        if (showError) {
+            showToast('❌ Benachrichtigungen konnten nicht geladen werden');
+        }
+    }
+}
+
+function openNotificationsModal() {
+    document.getElementById('notificationsModal')?.classList.add('open');
+    loadNotifications(true);
+}
+
+function closeNotificationsModal() {
+    document.getElementById('notificationsModal')?.classList.remove('open');
+}
+
+async function markNotificationsRead() {
+    try {
+        const res = await fetch('api.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ action: 'mark_notifications_read' })
+        });
+        const data = await res.json();
+        if (data.success) {
+            unreadNotifications = 0;
+            notifications = notifications.map(n => ({ ...n, read: true }));
+            updateNotificationBadge();
+            renderNotifications();
+            showToast('✅ Benachrichtigungen als gelesen markiert');
+        } else {
+            showToast(getApiErrorMessage(data));
+        }
+    } catch (e) {
+        showToast('❌ Verbindungsfehler');
+    }
 }
 
 // ==================== COLOR PICKER ====================
@@ -1153,8 +1288,13 @@ function exportData() {
 // ==================== INIT ====================
 document.addEventListener('DOMContentLoaded', () => {
     loadPosts();
+    loadNotifications();
     initAutoSave();
     initEmojiPicker();
+
+    notificationsPollTimer = setInterval(() => {
+        loadNotifications();
+    }, 30000);
     
     // Admin-Status von window übernehmen
     if (typeof window.isAdmin !== 'undefined') {
