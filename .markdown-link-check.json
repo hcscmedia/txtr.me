@@ -1,0 +1,7 @@
+{
+  "ignorePatterns": [
+    {
+      "pattern": "https://github.com/hcscmedia/txtr.me/actions/workflows/ci.yml/badge.svg"
+    }
+  ]
+}

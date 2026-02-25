@@ -216,6 +216,17 @@ function showToast(message) {
     setTimeout(() => toast.classList.remove('show'), 3000);
 }
 
+function getApiErrorMessage(data, fallback = 'Fehler') {
+    const msg = data?.message || fallback;
+    if (/zu viele|rate|später erneut/i.test(msg)) {
+        return '⏳ ' + msg;
+    }
+    if (/csrf|nicht autorisiert|unauthorized/i.test(msg)) {
+        return '🔒 ' + msg;
+    }
+    return '❌ ' + msg;
+}
+
 // ==================== COLOR PICKER ====================
 function selectColor(color) {
     selectedColor = color;
@@ -492,6 +503,17 @@ function insertEmoji(emoji) {
 }
 
 // ==================== API CALLS ====================
+function buildJsonHeaders(includeCsrf = false) {
+    const headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    };
+    if (includeCsrf && window.csrfToken) {
+        headers['X-CSRF-Token'] = window.csrfToken;
+    }
+    return headers;
+}
+
 async function loadPosts() {
     try {
         const res = await fetch('api.php?action=get_posts');
@@ -742,7 +764,7 @@ async function login() {
                 window.location.reload();
             }, 1000);
         } else {
-            showToast('❌ ' + (data.message || 'Fehler'));
+            showToast(getApiErrorMessage(data));
         }
     } catch (e) {
         showToast('❌ Verbindungsfehler');
@@ -754,16 +776,13 @@ async function logout() {
     try {
         await fetch('api.php', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
+            headers: buildJsonHeaders(true),
             credentials: 'same-origin',
             body: JSON.stringify({ action: 'logout' })
         });
         location.reload();
     } catch (e) {
-        showToast('❌ Fehler');
+        showToast('❌ Fehler beim Ausloggen');
         console.error('Logout Error:', e);
     }
 }
@@ -789,7 +808,7 @@ async function setUsername() {
             updateUsernameDisplay();
             showToast('✅ Name aktualisiert');
         } else {
-            showToast('❌ ' + (data.message || 'Fehler'));
+            showToast(getApiErrorMessage(data));
         }
     } catch (e) {
         showToast('❌ Verbindungsfehler');
@@ -893,9 +912,9 @@ async function updatePost() {
     try {
         const res = await fetch('api.php', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: buildJsonHeaders(true),
             body: JSON.stringify({
-                action: 'update',
+                action: 'edit_post',
                 id: postId,
                 text: text,
                 link: link,
@@ -910,7 +929,7 @@ async function updatePost() {
             showToast('✅ Post aktualisiert');
             loadPosts();
         } else {
-            showToast('❌ ' + (data.message || 'Fehler'));
+            showToast(getApiErrorMessage(data));
         }
     } catch (e) {
         showToast('❌ Verbindungsfehler');
@@ -927,9 +946,9 @@ async function togglePin(id) {
     try {
         await fetch('api.php', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: buildJsonHeaders(true),
             body: JSON.stringify({
-                action: 'update',
+                action: 'edit_post',
                 id: id,
                 text: post.text,
                 link: post.link || '',
@@ -941,7 +960,7 @@ async function togglePin(id) {
         showToast(post.pinned ? '📌 Anheftung entfernt' : '📌 Post angeheftet');
         loadPosts();
     } catch (e) {
-        showToast('❌ Fehler');
+        showToast('❌ Fehler beim Anheften');
     }
 }
 
@@ -951,7 +970,7 @@ async function deletePost(id) {
     try {
         const res = await fetch('api.php', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: buildJsonHeaders(true),
             body: JSON.stringify({ action: 'delete', id: id })
         });
         
@@ -960,10 +979,10 @@ async function deletePost(id) {
             showToast('🗑️ Post gelöscht');
             loadPosts();
         } else {
-            showToast('❌ ' + (data.message || 'Nicht autorisiert'));
+            showToast(getApiErrorMessage(data, 'Nicht autorisiert'));
         }
     } catch (e) {
-        showToast('❌ Fehler');
+        showToast('❌ Fehler beim Löschen');
         console.error('Delete Error:', e);
     }
 }
@@ -1011,7 +1030,7 @@ async function addComment(id) {
                 document.getElementById(`comments-${id}`)?.classList.add('open');
             }, 100);
         } else {
-            showToast('❌ ' + (data.message || 'Fehler'));
+            showToast(getApiErrorMessage(data));
         }
     } catch (e) {
         showToast('❌ Verbindungsfehler');
@@ -1042,7 +1061,7 @@ async function toggleBookmark(id, btn) {
             }
         }
     } catch (e) {
-        showToast('❌ Fehler');
+        showToast('❌ Fehler bei Lesezeichen');
     }
 }
 
@@ -1064,7 +1083,7 @@ async function submitReport() {
             closeReportModal();
             showToast('✅ Post gemeldet');
         } else {
-            showToast('❌ ' + (data.message || 'Fehler'));
+            showToast(getApiErrorMessage(data));
         }
     } catch (e) {
         showToast('❌ Verbindungsfehler');

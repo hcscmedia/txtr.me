@@ -20,13 +20,89 @@ define('FOLLOWS_FILE', 'follows.json');
 define('MESSAGES_FILE', 'messages.json');
 define('ACTIVITY_LOG_FILE', 'activity_log.json');
 define('MAX_POSTS', 50);
-define('ADMIN_PASSWORD', 'admin123'); // ⚠️ HIER ÄNDERN!
+define('ADMIN_PASSWORD', getenv('ADMIN_PASSWORD') ?: '');
 define('UPLOAD_DIR', 'uploads/');
 define('MAX_FILE_SIZE', 5 * 1024 * 1024);
+define('RATE_LIMIT_FILE', 'rate_limits.json');
 
 // Upload-Ordner erstellen
 if (!file_exists(UPLOAD_DIR)) {
     @mkdir(UPLOAD_DIR, 0755, true);
+}
+
+function encodeJsonData($data) {
+    $json = @json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    return $json === false ? null : $json;
+}
+
+function writeJsonFile($filePath, $data) {
+    $json = encodeJsonData($data);
+    if ($json === null) return false;
+
+    $tmpFile = $filePath . '.tmp';
+    if (@file_put_contents($tmpFile, $json, LOCK_EX) === false) {
+        return false;
+    }
+
+    if (!@rename($tmpFile, $filePath)) {
+        @unlink($tmpFile);
+        return false;
+    }
+
+    return true;
+}
+
+function getCsrfToken() {
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+function verifyCsrfToken($token) {
+    if (empty($token)) return false;
+    return hash_equals(getCsrfToken(), $token);
+}
+
+function getRateLimitData() {
+    if (!file_exists(RATE_LIMIT_FILE)) return [];
+    $json = @file_get_contents(RATE_LIMIT_FILE);
+    if (empty($json)) return [];
+    $data = @json_decode($json, true);
+    return is_array($data) ? $data : [];
+}
+
+function saveRateLimitData($data) {
+    return writeJsonFile(RATE_LIMIT_FILE, $data);
+}
+
+function checkRateLimit($action, $limit, $windowSeconds, $identifier = 'global') {
+    $now = time();
+    $key = $action . '|' . $identifier;
+    $data = getRateLimitData();
+
+    foreach ($data as $entryKey => $entry) {
+        $hits = array_filter($entry['hits'] ?? [], fn($ts) => ($now - (int)$ts) <= 86400);
+        if (empty($hits)) {
+            unset($data[$entryKey]);
+        } else {
+            $data[$entryKey]['hits'] = array_values($hits);
+        }
+    }
+
+    $hits = $data[$key]['hits'] ?? [];
+    $hits = array_values(array_filter($hits, fn($ts) => ($now - (int)$ts) <= $windowSeconds));
+
+    if (count($hits) >= $limit) {
+        $data[$key]['hits'] = $hits;
+        saveRateLimitData($data);
+        return false;
+    }
+
+    $hits[] = $now;
+    $data[$key]['hits'] = $hits;
+    saveRateLimitData($data);
+    return true;
 }
 
 // ==================== USER MANAGEMENT ====================
@@ -40,7 +116,7 @@ function getUsers() {
 }
 
 function saveUsers($users) {
-    return @file_put_contents(USERS_FILE, json_encode($users, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)) !== false;
+    return writeJsonFile(USERS_FILE, $users);
 }
 
 function getUserById($userId) {
@@ -177,7 +253,7 @@ function getActivityLog() {
 }
 
 function saveActivityLog($logs) {
-    return @file_put_contents(ACTIVITY_LOG_FILE, json_encode($logs, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)) !== false;
+    return writeJsonFile(ACTIVITY_LOG_FILE, $logs);
 }
 
 function logActivity($action, $details = [], $userId = null) {
@@ -213,7 +289,7 @@ function getFollows() {
 }
 
 function saveFollows($follows) {
-    return @file_put_contents(FOLLOWS_FILE, json_encode($follows, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)) !== false;
+    return writeJsonFile(FOLLOWS_FILE, $follows);
 }
 
 function followUser($followerId, $followingId) {
@@ -319,6 +395,17 @@ function updateUserCounts($followerId, $followingId) {
     saveUsers($users);
 }
 
+function refreshAllUserCounts() {
+    $users = getUsers();
+    foreach ($users as &$user) {
+        $userId = $user['id'] ?? null;
+        if (empty($userId)) continue;
+        $user['followers_count'] = count(getFollowers($userId));
+        $user['following_count'] = count(getFollowing($userId));
+    }
+    return saveUsers($users);
+}
+
 // ==================== MESSAGES ====================
 
 function getMessages() {
@@ -329,7 +416,7 @@ function getMessages() {
 }
 
 function saveMessages($messages) {
-    return @file_put_contents(MESSAGES_FILE, json_encode($messages, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)) !== false;
+    return writeJsonFile(MESSAGES_FILE, $messages);
 }
 
 function sendMessage($fromId, $toId, $text) {
@@ -456,7 +543,7 @@ function getPosts() {
 }
 
 function savePosts($posts) {
-    return @file_put_contents(DATA_FILE, json_encode($posts, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)) !== false;
+    return writeJsonFile(DATA_FILE, $posts);
 }
 
 function extractHashtags($text) {
@@ -602,6 +689,15 @@ function validateImage($base64Data) {
 function fetchLinkPreview($url) {
     if (!filter_var($url, FILTER_VALIDATE_URL)) return null;
     if (!preg_match('/^https?:\/\//i', $url)) $url = 'https://' . $url;
+
+    $parsedUrl = @parse_url($url);
+    $host = strtolower($parsedUrl['host'] ?? '');
+    if (empty($host)) return null;
+    if (in_array($host, ['localhost', '127.0.0.1', '::1'])) return null;
+
+    $resolvedIp = @gethostbyname($host);
+    $isPublicIp = filter_var($resolvedIp, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
+    if ($isPublicIp === false) return null;
     
     try {
         $ch = @curl_init();
@@ -613,7 +709,8 @@ function fetchLinkPreview($url) {
         @curl_setopt($ch, CURLOPT_MAXREDIRS, 3);
         @curl_setopt($ch, CURLOPT_TIMEOUT, 8);
         @curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
-        @curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        @curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        @curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
         
         $html = @curl_exec($ch);
         $httpCode = @curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -676,7 +773,7 @@ function savePushSubscription($subscription) {
         $subscriptions[] = $subscription;
     }
     
-    @file_put_contents($file, json_encode($subscriptions, JSON_PRETTY_PRINT));
+    writeJsonFile($file, $subscriptions);
 }
 
 // Bulk Actions

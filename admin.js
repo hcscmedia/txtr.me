@@ -9,6 +9,27 @@ let selectedPosts = [];
 let currentEditPost = null;
 let currentEditColor = 'default';
 
+function adminJsonHeaders() {
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+    if (window.csrfToken) {
+        headers['X-CSRF-Token'] = window.csrfToken;
+    }
+    return headers;
+}
+
+function getAdminApiErrorMessage(data, fallback = 'Fehler') {
+    const msg = data?.message || fallback;
+    if (/zu viele|rate|später erneut/i.test(msg)) {
+        return '⏳ ' + msg;
+    }
+    if (/csrf|nicht autorisiert|unauthorized/i.test(msg)) {
+        return '🔒 ' + msg;
+    }
+    return '❌ ' + msg;
+}
+
 // ==================== ANALYTICS ====================
 
 async function loadAnalytics() {
@@ -145,7 +166,7 @@ async function saveEditedPost() {
     try {
         const res = await fetch('api.php', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: adminJsonHeaders(),
             body: JSON.stringify({
                 action: 'edit_post',
                 id: postId,
@@ -162,7 +183,7 @@ async function saveEditedPost() {
             closeEditPostModal();
             loadAnalytics(); // Liste aktualisieren
         } else {
-            showToast('❌ ' + (data.message || 'Fehler'));
+            showToast(getAdminApiErrorMessage(data));
         }
     } catch (e) {
         console.error('Save Edit Error:', e);
@@ -176,7 +197,7 @@ async function deletePost(postId) {
     try {
         const res = await fetch('api.php', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: adminJsonHeaders(),
             body: JSON.stringify({
                 action: 'delete',
                 id: postId
@@ -188,7 +209,7 @@ async function deletePost(postId) {
             showToast('🗑️ Post gelöscht');
             loadAnalytics();
         } else {
-            showToast('❌ ' + (data.message || 'Fehler'));
+            showToast(getAdminApiErrorMessage(data));
         }
     } catch (e) {
         showToast('❌ Verbindungsfehler');
@@ -312,7 +333,7 @@ async function confirmBan() {
     try {
         const res = await fetch('api.php', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: adminJsonHeaders(),
             body: JSON.stringify({
                 action: 'ban_user',
                 user_id: userId,
@@ -326,7 +347,7 @@ async function confirmBan() {
             closeBanModal();
             loadUsers();
         } else {
-            showToast('❌ ' + (data.message || 'Fehler'));
+            showToast(getAdminApiErrorMessage(data));
         }
     } catch (e) {
         showToast('❌ Verbindungsfehler');
@@ -339,7 +360,7 @@ async function unbanUser(userId) {
     try {
         const res = await fetch('api.php', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: adminJsonHeaders(),
             body: JSON.stringify({
                 action: 'unban_user',
                 user_id: userId
@@ -351,7 +372,7 @@ async function unbanUser(userId) {
             showToast('✅ User entsperrt');
             loadUsers();
         } else {
-            showToast('❌ ' + (data.message || 'Fehler'));
+            showToast(getAdminApiErrorMessage(data));
         }
     } catch (e) {
         showToast('❌ Verbindungsfehler');
@@ -364,7 +385,7 @@ async function deleteUser(userId) {
     try {
         const res = await fetch('api.php', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: adminJsonHeaders(),
             body: JSON.stringify({
                 action: 'delete_user',
                 user_id: userId
@@ -376,7 +397,7 @@ async function deleteUser(userId) {
             showToast('✅ User gelöscht');
             loadUsers();
         } else {
-            showToast('❌ ' + (data.message || 'Fehler'));
+            showToast(getAdminApiErrorMessage(data));
         }
     } catch (e) {
         showToast('❌ Verbindungsfehler');
@@ -384,7 +405,12 @@ async function deleteUser(userId) {
 }
 
 function showUserPosts(userId) {
-    window.location.href = `profile.php?user_id=${userId}`;
+    const user = allUsers.find(u => u.id === userId);
+    if (!user || !user.username) {
+        showToast('❌ User nicht gefunden');
+        return;
+    }
+    window.location.href = `profile.php?user=${encodeURIComponent(user.username)}`;
 }
 
 // ==================== BULK ACTIONS ====================
@@ -451,7 +477,7 @@ async function bulkDeleteSelected() {
     try {
         const res = await fetch('api.php', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: adminJsonHeaders(),
             body: JSON.stringify({
                 action: 'bulk_delete',
                 post_ids: selectedPosts
@@ -464,7 +490,7 @@ async function bulkDeleteSelected() {
             selectedPosts = [];
             loadBulkPosts();
         } else {
-            showToast('❌ ' + (data.message || 'Fehler'));
+            showToast(getAdminApiErrorMessage(data));
         }
     } catch (e) {
         showToast('❌ Verbindungsfehler');
@@ -483,7 +509,7 @@ async function bulkReportSelected() {
     try {
         const res = await fetch('api.php', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: adminJsonHeaders(),
             body: JSON.stringify({
                 action: 'bulk_report',
                 post_ids: selectedPosts,
@@ -497,7 +523,7 @@ async function bulkReportSelected() {
             selectedPosts = [];
             loadBulkPosts();
         } else {
-            showToast('❌ ' + (data.message || 'Fehler'));
+            showToast(getAdminApiErrorMessage(data));
         }
     } catch (e) {
         showToast('❌ Verbindungsfehler');

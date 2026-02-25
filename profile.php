@@ -194,6 +194,17 @@ $isOwnProfile = $currentUser['id'] === $user['id'];
 const profileUser = <?php echo json_encode($user); ?>;
 const isFollowing = <?php echo $isFollowing ? 'true' : 'false'; ?>;
 
+function getApiErrorMessage(data, fallback = 'Fehler') {
+    const msg = data?.message || fallback;
+    if (/zu viele|rate|später erneut/i.test(msg)) {
+        return '⏳ ' + msg;
+    }
+    if (/csrf|nicht autorisiert|unauthorized/i.test(msg)) {
+        return '🔒 ' + msg;
+    }
+    return '❌ ' + msg;
+}
+
 function toggleFollow(userId) {
     fetch('api.php', {
         method: 'POST',
@@ -208,7 +219,7 @@ function toggleFollow(userId) {
         if (data.success) {
             location.reload();
         } else {
-            showToast('❌ ' + (data.message || 'Fehler'));
+            showToast(getApiErrorMessage(data));
         }
     })
     .catch(() => showToast('❌ Verbindungsfehler'));
@@ -246,7 +257,7 @@ function saveProfile() {
             showToast('✅ Profil aktualisiert');
             setTimeout(() => location.reload(), 1000);
         } else {
-            showToast('❌ ' + (data.message || 'Fehler'));
+            showToast(getApiErrorMessage(data));
         }
     })
     .catch(() => showToast('❌ Verbindungsfehler'));
@@ -285,7 +296,7 @@ function sendMessage() {
             showToast('✅ Nachricht gesendet');
             closeMessageModal();
         } else {
-            showToast('❌ ' + (data.message || 'Fehler'));
+            showToast(getApiErrorMessage(data));
         }
     })
     .catch(() => showToast('❌ Verbindungsfehler'));

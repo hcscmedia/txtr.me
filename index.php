@@ -71,6 +71,11 @@ $unreadCount = !empty($currentUserId) ? getUnreadCount($currentUserId) : 0;
             <i class="fas fa-times"></i>
         </button>
     </div>
+
+    <div class="active-filter" id="activeFilter">
+        <span>Filter: <strong id="filterValue"></strong></span>
+        <button onclick="clearFilter()">Zurücksetzen</button>
+    </div>
 </header>
 
 <!-- Bottom Nav -->
@@ -117,6 +122,8 @@ $unreadCount = !empty($currentUserId) ? getUnreadCount($currentUserId) : 0;
         </div>
         
         <textarea id="postText" rows="3" placeholder="Was gibt's Neues?" maxlength="2000"></textarea>
+
+        <div class="auto-save-status" id="autoSaveStatus"></div>
         
         <div class="color-picker">
             <div class="color-option color-default selected" data-color="default" onclick="selectColor('default')"></div>
@@ -147,6 +154,15 @@ $unreadCount = !empty($currentUserId) ? getUnreadCount($currentUserId) : 0;
             </div>
             <button class="btn-post" id="submitBtn" onclick="submitPost()">Posten</button>
         </div>
+
+        <div class="emoji-picker" id="emojiPicker">
+            <div class="emoji-grid"></div>
+        </div>
+    </div>
+
+    <div class="hashtag-cloud" id="hashtagCloud">
+        <h3>Trending Hashtags</h3>
+        <div id="hashtagList"></div>
     </div>
 
     <!-- Feed -->
@@ -162,9 +178,52 @@ $unreadCount = !empty($currentUserId) ? getUnreadCount($currentUserId) : 0;
 <div class="modal" id="loginModal">
     <div class="modal-content">
         <h2>🛡️ Admin Login</h2>
+        <input type="text" id="loginUsername" placeholder="Username (optional)">
         <input type="password" id="adminPassword" placeholder="Passwort">
         <button onclick="login()">Einloggen</button>
         <button class="secondary" onclick="closeLoginModal()">Abbrechen</button>
+    </div>
+</div>
+
+<div class="modal" id="usernameModal">
+    <div class="modal-content">
+        <h2>Anzeigename ändern</h2>
+        <input type="text" id="usernameInput" maxlength="30" placeholder="Neuer Anzeigename">
+        <button onclick="setUsername()">Speichern</button>
+        <button class="secondary" onclick="closeUsernameModal()">Abbrechen</button>
+    </div>
+</div>
+
+<div class="modal" id="reportModal">
+    <div class="modal-content">
+        <h2>Post melden</h2>
+        <input type="hidden" id="reportPostId">
+        <label><input type="radio" name="reportReason" value="Spam" checked> Spam</label>
+        <label><input type="radio" name="reportReason" value="Beleidigung"> Beleidigung</label>
+        <label><input type="radio" name="reportReason" value="Falsche Informationen"> Falsche Informationen</label>
+        <button onclick="submitReport()">Melden</button>
+        <button class="secondary" onclick="closeReportModal()">Abbrechen</button>
+    </div>
+</div>
+
+<div class="modal" id="editModal">
+    <div class="modal-content">
+        <h2>Post bearbeiten</h2>
+        <input type="hidden" id="editPostId">
+        <textarea id="editPostText" rows="4" maxlength="2000" placeholder="Post Text"></textarea>
+        <input type="url" id="editPostLink" placeholder="Link (https://...)">
+        <label for="editPostColor">Farbe</label>
+        <select id="editPostColor">
+            <option value="default">Standard</option>
+            <option value="blue">Blau</option>
+            <option value="green">Grün</option>
+            <option value="yellow">Gelb</option>
+            <option value="red">Rot</option>
+            <option value="purple">Lila</option>
+        </select>
+        <label><input type="checkbox" id="editPostPinned"> Anheften</label>
+        <button onclick="updatePost()">Speichern</button>
+        <button class="secondary" onclick="closeEditModal()">Abbrechen</button>
     </div>
 </div>
 
@@ -179,6 +238,7 @@ window.currentUser = {
     avatarColor: '<?php echo htmlspecialchars($currentAvatarColor); ?>'
 };
 window.isAdmin = <?php echo $isAdminUser ? 'true' : 'false'; ?>;
+window.csrfToken = '<?php echo htmlspecialchars(getCsrfToken(), ENT_QUOTES, 'UTF-8'); ?>';
 </script>
 
 </body>

@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-smoke:
+    name: Lint + Smoke Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: PHP Lint
+        run: |
+          php -l config.php
+          php -l api.php
+          php -l index.php
+          php -l admin.php
+          php -l profile.php
+          php -l messages.php
+          php -l health.php
+
+      - name: Smoke Test
+        run: |
+          chmod +x scripts/smoke_test.py
+          python3 scripts/smoke_test.py \
+            --start-server \
+            --base-url http://127.0.0.1:8080 \
+            --admin-password ci-secret
+
+  docs-quality:
+    name: Docs Quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Markdown Lint
+        run: npx --yes markdownlint-cli README.md
+
+      - name: README Link Check
+        run: npx --yes markdown-link-check --config .markdown-link-check.json README.md

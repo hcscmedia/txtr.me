@@ -214,6 +214,17 @@ $currentUser = getCurrentUser();
 let currentChatUserId = null;
 let refreshInterval = null;
 
+function getApiErrorMessage(data, fallback = 'Fehler') {
+    const msg = data?.message || fallback;
+    if (/zu viele|rate|später erneut/i.test(msg)) {
+        return '⏳ ' + msg;
+    }
+    if (/csrf|nicht autorisiert|unauthorized/i.test(msg)) {
+        return '🔒 ' + msg;
+    }
+    return '❌ ' + msg;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     loadConversations();
     refreshInterval = setInterval(loadConversations, 30000); // Alle 30 Sek. aktualisieren
@@ -223,6 +234,11 @@ async function loadConversations() {
     try {
         const res = await fetch('api.php?action=get_conversations');
         const data = await res.json();
+
+        if (!res.ok) {
+            showToast(getApiErrorMessage(data, 'Fehler beim Laden')); 
+            return;
+        }
         
         const list = document.getElementById('conversationsList');
         if (!data.success || !data.conversations.length) {
@@ -248,6 +264,7 @@ async function loadConversations() {
         `).join('');
     } catch (e) {
         console.error('Error:', e);
+        showToast('❌ Verbindungsfehler');
     }
 }
 
@@ -282,6 +299,11 @@ async function loadMessages(userId) {
     try {
         const res = await fetch(`api.php?action=get_conversation&user_id=${userId}`);
         const data = await res.json();
+
+        if (!res.ok) {
+            showToast(getApiErrorMessage(data, 'Fehler beim Laden')); 
+            return;
+        }
         
         const messagesContainer = document.getElementById('chatMessages');
         if (!data.success) return;
@@ -296,6 +318,7 @@ async function loadMessages(userId) {
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     } catch (e) {
         console.error('Error:', e);
+        showToast('❌ Verbindungsfehler');
     }
 }
 
@@ -320,9 +343,12 @@ async function sendChatMessage() {
         if (data.success) {
             input.value = '';
             loadMessages(currentChatUserId);
+        } else {
+            showToast(getApiErrorMessage(data));
         }
     } catch (e) {
         console.error('Error:', e);
+        showToast('❌ Verbindungsfehler');
     }
 }
 

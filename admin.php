@@ -289,6 +289,7 @@ $stats = getStats();
 <script src="admin.js"></script>
 <script>
 const adminStats = <?php echo json_encode($stats); ?>;
+window.csrfToken = '<?php echo htmlspecialchars(getCsrfToken(), ENT_QUOTES, 'UTF-8'); ?>';
 
 function toggleTheme() {
     const current = document.documentElement.getAttribute('data-theme');
@@ -299,7 +300,10 @@ function toggleTheme() {
 function logout() {
     fetch('api.php', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': window.csrfToken
+        },
         body: JSON.stringify({ action: 'logout' })
     }).then(() => location.href = 'index.php');
 }
