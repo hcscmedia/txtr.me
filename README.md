@@ -20,6 +20,7 @@ Dateibasierte PHP-Micro-Social-App mit Feed, Profilen, Follow-System, Direktnach
 - [Datenmodell (JSON-Dateien)](#datenmodell-json-dateien)
 - [Deployment-Hinweise](#deployment-hinweise)
 - [Troubleshooting](#troubleshooting)
+- [Release-Checkliste](#release-checkliste)
 - [Weiterentwicklung](#weiterentwicklung)
 
 ## Überblick
@@ -233,6 +234,12 @@ ADMIN_PASSWORD='...' php -S 127.0.0.1:8080
 ### Keine Daten / Fehler beim Speichern
 - Dateirechte für JSON-Dateien prüfen
 - Schreibrechte auf Projektverzeichnis/`uploads/` sicherstellen
+
+## Release-Checkliste
+
+Für wiederholbare Patch-Releases (z. B. `v1.0.1`) siehe:
+
+- `docs/release-checklist.md`
 
 ## Weiterentwicklung
 
